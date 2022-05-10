@@ -16,7 +16,7 @@ export const Organisation = ({ org, errors }) => {
         <strong>Issues from Organisation:</strong>
         <a href={org.url}>{org.name}</a>
       </p>
-      <Repository repository={org.repository}></Repository>
+      {org.repository && <Repository repository={org.repository}></Repository>}
     </div>
   );
 };

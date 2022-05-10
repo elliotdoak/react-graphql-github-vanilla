@@ -9,67 +9,81 @@ const axiosGitHubGraphQL = axios.create({
     "Content-Type": "application/json",
     Authorization: `bearer ${process.env.REACT_APP_GITHUB_PERSONAL_ACCESS_TOKEN}`,
   },
-  //withCredentials: false,
   credentials: "same-origin",
 });
-
-const GET_ISSUES_OF_REPO = `{
-  organization(login: "the-road-to-learn-react"){
-   name
-   url
-   repository(name: "the-road-to-learn-react"){
-     name
-     url
-     issues(last:5){
-       edges {
-         node {
-           id
-           title
-           url
-         }
-       }
-     }
-   }
-  }
-}`;
 
 const TITLE = "React GraphQL GitHub Client";
 
 export const App = () => {
-  const [url, setUrl] = useState("no url");
-  const [org, setOrg] = useState({});
+  const [orgName, setOrgName] = useState("");
+  const [repo, setRepo] = useState("");
+  const [orgData, setOrgData] = useState({});
   const [errors, setErrors] = useState([]);
 
-  useEffect(() => {
-    axiosGitHubGraphQL.post("", { query: GET_ISSUES_OF_REPO }).then((res) => {
-      setOrg(res?.data?.data?.organization);
-      setErrors(res.data.errors ? res.data.errors : "");
-    });
-  }, []);
+  const GET_ISSUES_OF_REPO = `
+    query ($orgName: String!, $repo: String!){ 
+      organization(login: $orgName){
+      name
+      url
+      repository(name: $repo){
+        name
+        url
+        issues(last:5){
+          edges {
+            node {
+              id
+              title
+              url
+            }
+          }
+        }
+      }
+     }} 
+`;
+
+  // useEffect(() => {
+  //   axiosGitHubGraphQL
+  //     .post("", {
+  //       query: GET_ISSUES_OF_REPO,
+  //       variables: { orgName, repo },
+  //     })
+  //     .then((res) => {
+  //       setErrors(res.data.errors ? res.data.errors : "");
+  //     });
+  // }, []);
+
+  const callQuery = () => {
+    axiosGitHubGraphQL
+      .post("", {
+        query: GET_ISSUES_OF_REPO,
+        variables: { orgName, repo },
+      })
+      .then((res) => {
+        setOrgData(res?.data?.data?.organization);
+        setErrors(res.data.errors ? res.data.errors : "");
+      });
+  };
 
   const onSubmit = (event) => {
     event.preventDefault();
-    console.log("org: ", org);
-    console.log("err: ", errors);
-  };
-
-  const onChange = (event) => {
-    setUrl(event.target.value);
+    const [organisation, repository] = event.target[0].value.split("/");
+    setOrgName(organisation);
+    setRepo(repository);
+    callQuery();
   };
 
   return (
     <div className="App">
       <h1 className="Page">{TITLE}</h1>
-
       <form className="form" onSubmit={onSubmit}>
         <label htmlFor="url">Show open issues for https://github.com/</label>
-        <input id="url" onChange={onChange}></input>
+        <input></input>
         <button type="submit">Search</button>
       </form>
-
-      {org?.name && <Organisation org={org} errors={errors} />}
-
-      {errors && (
+      {!errors && Object.keys(orgData).length !== 0 && orgData !== null && (
+        <Organisation org={orgData} errors={errors} />
+      )}
+      {errors.length > 0 && (
         <div className="errorContainer">
           <strong>Something went wrong:</strong>
           <ul>
