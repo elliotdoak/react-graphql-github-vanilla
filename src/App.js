@@ -28,12 +28,20 @@ export const App = () => {
       repository(name: $repo){
         name
         url
-        issues(last:5){
+        issues(last:5, states: [OPEN]){
           edges {
             node {
               id
               title
               url
+              reactions (last:5){
+                edges {
+                  node {
+                    id
+                    content
+                  }
+                }
+              }
             }
           }
         }

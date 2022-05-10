@@ -1,4 +1,5 @@
 import React from "react";
+import { ReactionList } from "./reaction-list";
 
 export const Repository = ({ repository }) => {
   return (
@@ -9,9 +10,10 @@ export const Repository = ({ repository }) => {
       </p>
 
       <ul>
-        {repository.issues.edges.map((edge) => (
-          <li key={edge.node.url}>
-            <a href={edge.node.url}>{edge.node.title}</a>
+        {repository.issues.edges.map((issue) => (
+          <li key={issue.node.url}>
+            <a href={issue.node.url}>{issue.node.title}</a>
+            <ReactionList repository={issue} />
           </li>
         ))}
       </ul>
