@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { Organisation } from "./components/organisation";
 import "./styles.css";
@@ -19,22 +19,25 @@ export const App = () => {
   const [repo, setRepo] = useState("");
   const [orgData, setOrgData] = useState({});
   const [errors, setErrors] = useState([]);
+  const [cursor, setCursor] = useState(undefined);
 
   const GET_ISSUES_OF_REPO = `
-    query ($orgName: String!, $repo: String!){ 
+    query ($orgName: String!, $repo: String!, $cursor: String){ 
       organization(login: $orgName){
       name
       url
       repository(name: $repo){
+        id
         name
         url
-        issues(last:5, states: [OPEN]){
+        viewerHasStarred
+        issues(first:5, after: $cursor, states: [OPEN]){
           edges {
             node {
               id
               title
               url
-              reactions (last:5){
+              reactions (last:3){
                 edges {
                   node {
                     id
@@ -44,32 +47,46 @@ export const App = () => {
               }
             }
           }
+          totalCount
+          pageInfo {
+            endCursor
+            hasNextPage
+          }
         }
       }
      }} 
 `;
 
-  // useEffect(() => {
-  //   axiosGitHubGraphQL
-  //     .post("", {
-  //       query: GET_ISSUES_OF_REPO,
-  //       variables: { orgName, repo },
-  //     })
-  //     .then((res) => {
-  //       setErrors(res.data.errors ? res.data.errors : "");
-  //     });
-  // }, []);
-
   const callQuery = () => {
     axiosGitHubGraphQL
       .post("", {
         query: GET_ISSUES_OF_REPO,
-        variables: { orgName, repo },
+        variables: { orgName, repo, cursor },
       })
       .then((res) => {
         setOrgData(res?.data?.data?.organization);
+        setCursor(
+          res?.data.data?.organization.repository.issues.pageInfo.endCursor
+        );
         setErrors(res.data.errors ? res.data.errors : "");
       });
+  };
+
+  const ADD_STAR = `
+  mutation($id: ID!){
+    addStar(input:{starrableId: $id}){
+      starrable {
+        viewerHasStarred
+      }
+    }
+  }`;
+
+  const addStarToRepoMutation = (id) => {
+    console.log(id);
+    axiosGitHubGraphQL.post("", {
+      query: ADD_STAR,
+      variables: { id },
+    });
   };
 
   const onSubmit = (event) => {
@@ -77,6 +94,17 @@ export const App = () => {
     const [organisation, repository] = event.target[0].value.split("/");
     setOrgName(organisation);
     setRepo(repository);
+    callQuery();
+  };
+
+  const onStarRepo = (id, isStarred) => {
+    console.log(id, isStarred);
+    addStarToRepoMutation(id);
+  };
+
+  const onFetchMoreIssues = () => {
+    console.log("FETCH");
+    console.log(cursor);
     callQuery();
   };
 
@@ -89,7 +117,12 @@ export const App = () => {
         <button type="submit">Search</button>
       </form>
       {!errors && Object.keys(orgData).length !== 0 && orgData !== null && (
-        <Organisation org={orgData} errors={errors} />
+        <Organisation
+          org={orgData}
+          errors={errors}
+          onFetchMoreIssues={onFetchMoreIssues}
+          onStarRepo={onStarRepo}
+        />
       )}
       {errors.length > 0 && (
         <div className="errorContainer">

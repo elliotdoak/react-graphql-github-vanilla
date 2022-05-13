@@ -1,7 +1,12 @@
 import React from "react";
 import { Repository } from "./repository";
 
-export const Organisation = ({ org, errors }) => {
+export const Organisation = ({
+  org,
+  errors,
+  onFetchMoreIssues,
+  onStarRepo,
+}) => {
   if (errors) {
     return (
       <p>
@@ -16,7 +21,13 @@ export const Organisation = ({ org, errors }) => {
         <strong>Issues from Organisation:</strong>
         <a href={org.url}>{org.name}</a>
       </p>
-      {org.repository && <Repository repository={org.repository}></Repository>}
+      {org.repository && (
+        <Repository
+          repository={org.repository}
+          onFetchMoreIssues={onFetchMoreIssues}
+          onStarRepo={onStarRepo}
+        ></Repository>
+      )}
     </div>
   );
 };
