@@ -20,6 +20,8 @@ export const App = () => {
   const [orgData, setOrgData] = useState({});
   const [errors, setErrors] = useState([]);
   const [cursor, setCursor] = useState(undefined);
+  const [isStarred, setIsStarred] = useState(false);
+  const [stargazerCount, setStargazerCount] = useState(0);
 
   const GET_ISSUES_OF_REPO = `
     query ($orgName: String!, $repo: String!, $cursor: String){ 
@@ -30,6 +32,9 @@ export const App = () => {
         id
         name
         url
+        stargazers {
+          totalCount
+        }
         viewerHasStarred
         issues(first:5, after: $cursor, states: [OPEN]){
           edges {
@@ -68,6 +73,9 @@ export const App = () => {
         setCursor(
           res?.data.data?.organization.repository.issues.pageInfo.endCursor
         );
+        setStargazerCount(
+          res?.data.data?.organization.repository.stargazers.totalCount
+        );
         setErrors(res.data.errors ? res.data.errors : "");
       });
   };
@@ -81,12 +89,26 @@ export const App = () => {
     }
   }`;
 
-  const addStarToRepoMutation = (id) => {
+  const REMOVE_STAR = `
+  mutation($id: ID!){
+    removeStar(input:{starrableId: $id}){
+      starrable {
+        viewerHasStarred
+      }
+    }
+  }`;
+
+  const updateStarRepoMutation = (id) => {
     console.log(id);
-    axiosGitHubGraphQL.post("", {
-      query: ADD_STAR,
-      variables: { id },
-    });
+    axiosGitHubGraphQL
+      .post("", {
+        query: isStarred ? REMOVE_STAR : ADD_STAR,
+        variables: { id },
+      })
+      .then(setIsStarred(!isStarred))
+      .then(
+        setStargazerCount(isStarred ? stargazerCount - 1 : stargazerCount + 1)
+      );
   };
 
   const onSubmit = (event) => {
@@ -99,7 +121,8 @@ export const App = () => {
 
   const onStarRepo = (id, isStarred) => {
     console.log(id, isStarred);
-    addStarToRepoMutation(id);
+    updateStarRepoMutation(id);
+    //setIsStarred(true);
   };
 
   const onFetchMoreIssues = () => {
@@ -122,6 +145,8 @@ export const App = () => {
           errors={errors}
           onFetchMoreIssues={onFetchMoreIssues}
           onStarRepo={onStarRepo}
+          isStarred={isStarred}
+          stargazerCount={stargazerCount}
         />
       )}
       {errors.length > 0 && (

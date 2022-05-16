@@ -1,7 +1,14 @@
 import React from "react";
 import { ReactionList } from "./reaction-list";
 
-export const Repository = ({ repository, onFetchMoreIssues, onStarRepo }) => {
+export const Repository = ({
+  repository,
+  onFetchMoreIssues,
+  onStarRepo,
+  isStarred,
+  stargazerCount,
+}) => {
+  console.log(isStarred);
   return (
     <div>
       <p>
@@ -10,7 +17,9 @@ export const Repository = ({ repository, onFetchMoreIssues, onStarRepo }) => {
         <button
           onClick={() => onStarRepo(repository.id, repository.viewerHasStarred)}
         >
-          {!repository.viewerHasStarred ? "Star" : "Unstar"} github repo
+          {`${stargazerCount} stargazers - ${
+            !isStarred ? "Star" : "Unstar"
+          } github repo`}
         </button>
       </p>
 
